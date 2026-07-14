@@ -54,6 +54,7 @@ Cursor / Claude Desktop (`mcp.json` / `claude_desktop_config.json`):
 | `MCP_NEWBUILD_API_KEY` | Ключ Pro (заголовок X-API-Key). [Получить](https://atomno-mcp.ru/pricing#newbuild-pro) | да |
 | `MCP_NEWBUILD_API_BASE` | URL hosted-бэкенда (по умолчанию — прод) | нет |
 | `MCP_NEWBUILD_TIMEOUT` | Таймаут HTTP, сек (default 30) | нет |
+| `MCP_NEWBUILD_LOG_LEVEL` | Уровень логирования (DEBUG/INFO/WARNING/ERROR, default WARNING) | нет |
 
 ## Тулы
 

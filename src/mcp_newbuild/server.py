@@ -1,10 +1,10 @@
 """FastMCP entrypoint для atomno-mcp-newbuild (тонкий клиент).
 
-Все тулы проксируют к hosted-бэкенду Atomno Labs (тариф Pro, ключ
+Все тулы проксируют к hosted-бэкенду Atomno MCP (тариф Pro, ключ
 MCP_NEWBUILD_API_KEY): check_developer, get_project_declaration, check_escrow,
 check_construction_permit, list_new_buildings, get_developer_risk_summary.
 Каждый ответ несёт disclaimer/source. Данные — СПРАВОЧНЫЕ, из официального
-ЕИСЖС/наш.дом.рф; не инвестиционная рекомендация (см. spec, разделы 8-9).
+ЕИСЖС/наш.дом.рф; не инвестиционная рекомендация.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ mcp: FastMCP = FastMCP(
         "developer profile by INN/OGRN, project declaration, escrow scheme and "
         "authorised bank, construction permit with deadline-shift history, a "
         "filterable catalogue of buildings under construction, and a deterministic "
-        "developer risk summary. All tools go through the Atomno Labs hosted API "
+        "developer risk summary. All tools go through the Atomno MCP hosted API "
         "and need a Pro key (MCP_NEWBUILD_API_KEY). Every answer carries a "
         "disclaimer and a source. The data is advisory, not an investment "
         "recommendation — verify with the primary source before a deal. Get a key "

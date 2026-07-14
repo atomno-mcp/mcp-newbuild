@@ -7,7 +7,7 @@
 
 ### Added
 
-- Тонкий MCP-клиент `atomno-mcp-newbuild` (open-core: публичный клиент + приватный hosted-сервер).
+- Тонкий MCP-клиент `atomno-mcp-newbuild` (публичный клиент + hosted corporate API, тариф Pro).
 - 6 тулов через hosted API (тариф Pro): `check_developer`, `get_project_declaration`,
   `check_escrow`, `check_construction_permit`, `list_new_buildings`, `get_developer_risk_summary`.
 - Проверка новостроек и застройщиков РФ по официальным данным ЕИСЖС/наш.дом.рф (214-ФЗ).
