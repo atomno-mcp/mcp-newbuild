@@ -1,4 +1,8 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
-  "maintainers": ["atomnos"]
+  "maintainers": [
+    "atomnos"
+  ],
+  "name": "mcp-newbuild",
+  "description": "Russian new-build (214-FZ) checker: developers, declarations, escrow, permits, risk."
 }
