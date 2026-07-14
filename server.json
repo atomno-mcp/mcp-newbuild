@@ -1,18 +1,19 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "mcp-newbuild",
+  "name": "io.github.atomno-mcp/mcp-newbuild",
+  "title": "mcp-newbuild",
   "description": "Russian new-build (214-FZ) checker: developers, declarations, escrow, permits, risk.",
   "repository": {
     "url": "https://github.com/atomno-mcp/mcp-newbuild",
     "source": "github"
   },
-  "version": "0.1.2",
+  "version": "0.1.4",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "atomno-mcp-newbuild",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
