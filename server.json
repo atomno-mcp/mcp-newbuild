@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.atomno-mcp/mcp-newbuild",
-  "description": "Check Russian new-build developers and projects from the official ЕИСЖС/наш.дом.рф data (214-ФЗ): developer profile, project declaration, escrow scheme, construction permit with deadline-shift history, catalogue of buildings under construction, and a deterministic developer risk summary (advisory).",
+  "description": "Russian new-build (214-FZ) checker: developers, declarations, escrow, permits, risk.",
   "repository": {
     "url": "https://github.com/atomno-mcp/mcp-newbuild",
     "source": "github"
