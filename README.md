@@ -1,10 +1,10 @@
 <!-- mcp-name: io.github.atomno-mcp/mcp-newbuild -->
+
 # atomno-mcp-newbuild
 
-**Проверка новостройки и застройщика прямо в AI-ассистенте** — check Russian
-new-build developers and construction projects for AI agents, straight from the
-official ЕИСЖС / наш.дом.рф data (214-ФЗ). Works in Cursor, Claude Desktop,
-Cline, and any MCP client.
+Проверка новостройки и застройщика по данным наш.дом.рф: реквизиты, эскроу, разрешение на строительство и сроки по 214-ФЗ. Перед покупкой квартиры по ДДУ — справка из первоисточника, без ручного листания сайта.
+
+Russian new-build developer check for AI agents.
 
 Перед покупкой квартиры по ДДУ на миллионы рублей — за секунды проверьте
 застройщика и объект, не листая вручную наш.дом.рф. Спросите ассистента
