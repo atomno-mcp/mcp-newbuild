@@ -4,5 +4,5 @@
     "atomnos"
   ],
   "name": "mcp-newbuild",
-  "description": "Russian new-build (214-FZ) checker: developers, declarations, escrow, permits, risk."
+  "description": "New-build MCP. EISZHS / nash.dom.rf sources are not connected."
 }

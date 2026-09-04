@@ -1,10 +1,8 @@
 """FastMCP entrypoint для atomno-mcp-newbuild (тонкий клиент).
 
-Все тулы проксируют к hosted-бэкенду Atomno MCP (тариф Pro, ключ
-MCP_NEWBUILD_API_KEY): check_developer, get_project_declaration, check_escrow,
-check_construction_permit, list_new_buildings, get_developer_risk_summary.
-Каждый ответ несёт disclaimer/source. Данные — СПРАВОЧНЫЕ, из официального
-ЕИСЖС/наш.дом.рф; не инвестиционная рекомендация.
+Тулы проксируют к hosted-бэкенду. ЕИСЖС / наш.дом.рф ещё не подключены:
+ответ — ready=false, не пустая карточка объекта. Данные справочные, не
+инвестиционная рекомендация.
 """
 
 from __future__ import annotations
@@ -41,16 +39,13 @@ DISCLAIMER = (
 mcp: FastMCP = FastMCP(
     name="atomno-mcp-newbuild",
     instructions=(
-        "Check Russian new-build developers and construction projects for AI "
-        "agents, straight from the official ЕИСЖС / наш.дом.рф data (214-ФЗ): "
-        "developer profile by INN/OGRN, project declaration, escrow scheme and "
-        "authorised bank, construction permit with deadline-shift history, a "
-        "filterable catalogue of buildings under construction, and a deterministic "
-        "developer risk summary. All tools go through the Atomno MCP hosted API "
-        "and need a Pro key (MCP_NEWBUILD_API_KEY). Every answer carries a "
-        "disclaimer and a source. The data is advisory, not an investment "
-        "recommendation — verify with the primary source before a deal. Get a key "
-        "at https://atomno-mcp.ru/pricing#newbuild-pro."
+        "Russian new-build MCP client. EISZHS / nash.dom.rf are not connected "
+        "yet: every lookup returns ready=false with the source name, not an empty "
+        "developer or object card. Do not treat that as «not found». Tools: "
+        "check_developer, get_project_declaration, check_escrow, "
+        "check_construction_permit, list_new_buildings, get_developer_risk_summary. "
+        "Hosted API, Pro key MCP_NEWBUILD_API_KEY. Advisory only, not investment "
+        "advice. Key: https://atomno-mcp.ru/pricing#newbuild-pro."
     ),
 )
 
@@ -117,7 +112,7 @@ async def _call(fn) -> dict[str, Any]:
 async def check_developer(
     ident: Annotated[str, Field(min_length=1, description="ИНН или ОГРН застройщика (юрлица).")],
 ) -> dict[str, Any]:
-    """Карточка застройщика из ЕИСЖС по ИНН/ОГРН: реквизиты, реестр застройщиков, объекты, число проблемных, фин.состояние по 214-ФЗ. Тариф Pro."""
+    """Карточка застройщика из ЕИСЖС ещё не подключена. Ответ: ready=false, источник подключается. Не путать с «не найден». Тариф Pro."""
     return await _hosted_call(
         "check_developer",
         lambda: _call(lambda c: c.developer(ident)),
@@ -128,7 +123,7 @@ async def check_developer(
 async def get_project_declaration(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта (строящегося дома/ЖК) в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Проектная декларация объекта: параметры дома, застройщик, банк, планируемый срок ввода, ключевые площади, изменения декларации. Тариф Pro."""
+    """Проектная декларация ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
     return await _hosted_call(
         "get_project_declaration",
         lambda: _call(lambda c: c.declaration(object_id)),
@@ -139,7 +134,7 @@ async def get_project_declaration(
 async def check_escrow(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Схема привлечения средств по объекту: используются ли эскроу-счета (214-ФЗ), уполномоченный банк, признак эскроу/без эскроу/спецсчёт. Тариф Pro."""
+    """Проверка эскроу ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
     return await _hosted_call(
         "check_escrow",
         lambda: _call(lambda c: c.escrow(object_id)),
@@ -150,7 +145,7 @@ async def check_escrow(
 async def check_construction_permit(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Разрешение на строительство по объекту: РНС, заявленный и фактический этап, срок ввода, история переноса сроков (PRO). Тариф Pro."""
+    """Разрешение на строительство ещё не подключено. Ответ: ready=false, источник подключается. Тариф Pro."""
     return await _hosted_call(
         "check_construction_permit",
         lambda: _call(lambda c: c.permit(object_id)),
@@ -166,7 +161,7 @@ async def list_new_buildings(
     escrow: Annotated[bool | None, Field(default=None, description="Только объекты через эскроу (true) / без эскроу (false).")] = None,
     limit: Annotated[int, Field(default=20, ge=1, le=100, description="Максимум результатов.")] = 20,
 ) -> dict[str, Any]:
-    """Поиск/каталог строящихся объектов с фильтрами (регион, застройщик, срок ввода, стадия, эскроу). Точка входа «что строится» + сравнение. Тариф Pro."""
+    """Каталог строящихся объектов ещё не подключён. Ответ: ready=false, источник подключается. Тариф Pro."""
     return await _hosted_call(
         "list_new_buildings",
         lambda: _call(
@@ -181,7 +176,7 @@ async def list_new_buildings(
 async def get_developer_risk_summary(
     inn: Annotated[str, Field(min_length=1, description="ИНН застройщика.")],
 ) -> dict[str, Any]:
-    """Детерминированная сводка риска застройщика по портфелю: доля проблемных объектов, средний сдвиг сроков (мес.), доля без эскроу, введено в срок. Нейтральные формулировки, справочно. Тариф Pro."""
+    """Сводка риска застройщика ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
     return await _hosted_call(
         "get_developer_risk_summary",
         lambda: _call(lambda c: c.developer_risk(inn)),
@@ -192,8 +187,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="atomno-mcp-newbuild",
         description=(
-            "MCP server: Russian new-build developer & project checks via "
-            "ЕИСЖС/наш.дом.рф (214-ФЗ)."
+            "MCP server: Russian new-build client. EISZHS / nash.dom.rf are "
+            "not connected yet; replies are honest not-ready."
         ),
     )
     parser.add_argument(
