@@ -3,6 +3,17 @@
 Все заметные изменения фиксируются здесь. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.1.5] — 2026-09-04
+
+### Added
+
+- Переменные `MCP_NEWBUILD_EISZHS_CLIENT_ID` и `MCP_NEWBUILD_EISZHS_CLIENT_SECRET` для договора клиента с ЕИСЖС.
+
+### Changed
+
+- Тулы принимают учётку клиента ЕИСЖС. Без учётки отвечают `source_not_configured`. Если спецификация методов закрыта договором — `spec_closed`.
+- Неверный ключ нашего размещения отвечает `invalid_credentials`.
+
 ## [0.1.0] — 2026-07-04
 
 ### Added

@@ -1,11 +1,11 @@
-"""Конфигурация тонкого клиента из переменных окружения.
+"""Конфигурация из переменных окружения.
 
-Все тулы (застройщик/декларация/эскроу/разрешение/поиск/риск) идут через
-hosted-бэкенд и требуют ключ Pro.
+Ключ договора ЕИСЖС — client_id и client_secret клиента
+(оферта API ЕИСЖС, бизнес.дом.рф). Спецификация методов закрыта договором:
+при заданных учётках запрос с выдуманными путями не отправляем.
 
-    MCP_NEWBUILD_API_BASE — базовый URL hosted-бэкенда (default: публичный прод).
-    MCP_NEWBUILD_API_KEY  — API-ключ (заголовок X-API-Key). Без него тулы → подсказка.
-    MCP_NEWBUILD_TIMEOUT  — таймаут HTTP в секундах (default 30).
+Наше размещение — отдельная услуга (MCP_NEWBUILD_API_KEY).
+Своего договора с ЕИСЖС у нас нет.
 """
 
 from __future__ import annotations
@@ -22,6 +22,10 @@ class Settings:
     api_base: str
     token: str | None
     timeout: float
+    eiszhs_client_id: str | None = None
+    eiszhs_client_secret: str | None = None
+    eiszhs_base_url: str | None = None
+    eiszhs_token_url: str | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -31,8 +35,26 @@ class Settings:
             timeout = float(os.environ.get("MCP_NEWBUILD_TIMEOUT") or DEFAULT_TIMEOUT)
         except ValueError:
             timeout = DEFAULT_TIMEOUT
-        return cls(api_base=base, token=token, timeout=timeout)
+        client_id = (os.environ.get("MCP_NEWBUILD_EISZHS_CLIENT_ID") or "").strip() or None
+        secret = os.environ.get("MCP_NEWBUILD_EISZHS_CLIENT_SECRET") or None
+        if secret is not None and not secret.strip():
+            secret = None
+        eiszhs_base = (os.environ.get("MCP_NEWBUILD_EISZHS_BASE_URL") or "").strip() or None
+        token_url = (os.environ.get("MCP_NEWBUILD_EISZHS_TOKEN_URL") or "").strip() or None
+        return cls(
+            api_base=base,
+            token=token,
+            timeout=timeout,
+            eiszhs_client_id=client_id,
+            eiszhs_client_secret=secret,
+            eiszhs_base_url=eiszhs_base,
+            eiszhs_token_url=token_url,
+        )
 
     @property
     def has_token(self) -> bool:
         return bool(self.token)
+
+    @property
+    def has_eiszhs(self) -> bool:
+        return bool(self.eiszhs_client_id and self.eiszhs_client_secret)

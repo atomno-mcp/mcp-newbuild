@@ -1,8 +1,8 @@
-"""FastMCP entrypoint для atomno-mcp-newbuild (тонкий клиент).
+"""FastMCP entrypoint для atomno-mcp-newbuild.
 
-Тулы проксируют к hosted-бэкенду. ЕИСЖС / наш.дом.рф ещё не подключены:
-ответ — ready=false, не пустая карточка объекта. Данные справочные, не
-инвестиционная рекомендация.
+Работа на ключе клиента ЕИСЖС: client_id + client_secret из договора-оферты.
+Спецификация методов закрыта — выдуманный обмен не отправляем.
+Без ключа — честный отказ, не пустая карточка. Справочно, не инвестрекомендация.
 """
 
 from __future__ import annotations
@@ -39,13 +39,11 @@ DISCLAIMER = (
 mcp: FastMCP = FastMCP(
     name="atomno-mcp-newbuild",
     instructions=(
-        "Russian new-build MCP client. EISZHS / nash.dom.rf are not connected "
-        "yet: every lookup returns ready=false with the source name, not an empty "
-        "developer or object card. Do not treat that as «not found». Tools: "
-        "check_developer, get_project_declaration, check_escrow, "
-        "check_construction_permit, list_new_buildings, get_developer_risk_summary. "
-        "Hosted API, Pro key MCP_NEWBUILD_API_KEY. Advisory only, not investment "
-        "advice. Key: https://atomno-mcp.ru/pricing#newbuild-pro."
+        "Russian new-build MCP. Official EISZHS API uses the client's "
+        "client_id and client_secret. Method specification is behind the "
+        "contract — we do not invent endpoints. Without credentials the tools "
+        "refuse honestly, not with an empty card. We have no EISZHS contract "
+        "of our own; live client keys have not been verified. Advisory only."
     ),
 )
 
@@ -75,32 +73,87 @@ def _close_client_atexit() -> None:
         pass
 
 
-def _no_token_hint() -> dict[str, Any]:
-    return {
-        "error": "missing_token",
-        "message_ru": (
-            "Не задан MCP_NEWBUILD_API_KEY. Проверка новостроек и застройщиков — "
-            "платная (тариф Pro). Ключ: https://atomno-mcp.ru/pricing#newbuild-pro"
-        ),
-        "disclaimer": DISCLAIMER,
-    }
+SOURCE_EISZHS = "API ЕИСЖС (бизнес.дом.рф), договор клиента"
+
+_NOT_CONFIGURED = (
+    "Доступ к ЕИСЖС не настроен. Нужны MCP_NEWBUILD_EISZHS_CLIENT_ID и "
+    "MCP_NEWBUILD_EISZHS_CLIENT_SECRET из вашего договора-оферты "
+    "(страница https://бизнес.дом.рф/api-еисжс). Своего договора с ЕИСЖС "
+    "у нас нет; на живом ключе клиента обмен не проверяли. "
+    "Наше размещение — отдельная услуга: MCP_NEWBUILD_API_KEY. "
+    "Это не ответ «застройщик / объект не найден»."
+)
+
+_SPEC_CLOSED = (
+    "Учётка ЕИСЖС задана, но перечень методов и форматы закрыты договором "
+    "(спецификация на странице ПО после заключения оферты). "
+    "Запрос с выдуманными путями не отправляем. Когда будет описание — "
+    "подключим методы. На живом ключе не проверяли. "
+    "Это не ответ «не найдено»."
+)
+
+
+def _with_disclaimer(payload: dict[str, Any]) -> dict[str, Any]:
+    payload.setdefault("disclaimer", DISCLAIMER)
+    return payload
+
+
+def _not_configured() -> dict[str, Any]:
+    return _with_disclaimer(
+        {
+            "ready": False,
+            "error": "source_not_configured",
+            "message_ru": _NOT_CONFIGURED,
+            "source": SOURCE_EISZHS,
+        }
+    )
+
+
+def _spec_closed() -> dict[str, Any]:
+    return _with_disclaimer(
+        {
+            "ready": False,
+            "error": "spec_closed",
+            "message_ru": _SPEC_CLOSED,
+            "source": SOURCE_EISZHS,
+        }
+    )
 
 
 async def _hosted_call(name: str, coro_factory) -> dict[str, Any]:
     if not _settings.has_token:
-        return _no_token_hint()
+        return _not_configured()
     try:
         result = await coro_factory()
-        result.setdefault("disclaimer", DISCLAIMER)
-        return result
+        return _with_disclaimer(result)
     except BackendError as exc:
-        if exc.status_code == 401:
-            return _no_token_hint()
+        if exc.status_code in (401, 403):
+            return _with_disclaimer(
+                {
+                    "ready": False,
+                    "error": "invalid_credentials",
+                    "message_ru": (
+                        "Ключ нашего размещения (MCP_NEWBUILD_API_KEY) не принят. "
+                        "Это не ответ «объект не найден»."
+                    ),
+                    "source": "наше размещение atomno-mcp",
+                }
+            )
         logger.warning("%s backend %s: %s", name, exc.status_code, exc.detail)
-        return {"error": "backend_error", "status": exc.status_code, "message": exc.detail}
+        return _with_disclaimer(
+            {"error": "backend_error", "status": exc.status_code, "message": exc.detail}
+        )
     except NewbuildError as exc:
         logger.warning("%s failed: %s", name, exc)
-        return {"error": "unavailable", "message": str(exc)}
+        return _with_disclaimer({"error": "unavailable", "message": str(exc)})
+
+
+async def _source_or_hosted(name: str, coro_factory) -> dict[str, Any]:
+    if _settings.has_eiszhs:
+        return _spec_closed()
+    if _settings.has_token:
+        return await _hosted_call(name, coro_factory)
+    return _not_configured()
 
 
 async def _call(fn) -> dict[str, Any]:
@@ -112,8 +165,8 @@ async def _call(fn) -> dict[str, Any]:
 async def check_developer(
     ident: Annotated[str, Field(min_length=1, description="ИНН или ОГРН застройщика (юрлица).")],
 ) -> dict[str, Any]:
-    """Карточка застройщика из ЕИСЖС ещё не подключена. Ответ: ready=false, источник подключается. Не путать с «не найден». Тариф Pro."""
-    return await _hosted_call(
+    """Карточка застройщика: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто — запрос не выдумываем."""
+    return await _source_or_hosted(
         "check_developer",
         lambda: _call(lambda c: c.developer(ident)),
     )
@@ -123,8 +176,8 @@ async def check_developer(
 async def get_project_declaration(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта (строящегося дома/ЖК) в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Проектная декларация ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
-    return await _hosted_call(
+    """Проектная декларация: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто."""
+    return await _source_or_hosted(
         "get_project_declaration",
         lambda: _call(lambda c: c.declaration(object_id)),
     )
@@ -134,8 +187,8 @@ async def get_project_declaration(
 async def check_escrow(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Проверка эскроу ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
-    return await _hosted_call(
+    """Эскроу: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто."""
+    return await _source_or_hosted(
         "check_escrow",
         lambda: _call(lambda c: c.escrow(object_id)),
     )
@@ -145,8 +198,8 @@ async def check_escrow(
 async def check_construction_permit(
     object_id: Annotated[str, Field(min_length=1, description="Идентификатор объекта в ЕИСЖС.")],
 ) -> dict[str, Any]:
-    """Разрешение на строительство ещё не подключено. Ответ: ready=false, источник подключается. Тариф Pro."""
-    return await _hosted_call(
+    """Разрешение на строительство: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто."""
+    return await _source_or_hosted(
         "check_construction_permit",
         lambda: _call(lambda c: c.permit(object_id)),
     )
@@ -161,8 +214,8 @@ async def list_new_buildings(
     escrow: Annotated[bool | None, Field(default=None, description="Только объекты через эскроу (true) / без эскроу (false).")] = None,
     limit: Annotated[int, Field(default=20, ge=1, le=100, description="Максимум результатов.")] = 20,
 ) -> dict[str, Any]:
-    """Каталог строящихся объектов ещё не подключён. Ответ: ready=false, источник подключается. Тариф Pro."""
-    return await _hosted_call(
+    """Каталог объектов: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто."""
+    return await _source_or_hosted(
         "list_new_buildings",
         lambda: _call(
             lambda c: c.search_objects(
@@ -176,8 +229,8 @@ async def list_new_buildings(
 async def get_developer_risk_summary(
     inn: Annotated[str, Field(min_length=1, description="ИНН застройщика.")],
 ) -> dict[str, Any]:
-    """Сводка риска застройщика ещё не подключена. Ответ: ready=false, источник подключается. Тариф Pro."""
-    return await _hosted_call(
+    """Сводка риска: ключ ЕИСЖС клиента или честный отказ. Описание методов закрыто."""
+    return await _source_or_hosted(
         "get_developer_risk_summary",
         lambda: _call(lambda c: c.developer_risk(inn)),
     )
@@ -187,8 +240,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="atomno-mcp-newbuild",
         description=(
-            "MCP server: Russian new-build client. EISZHS / nash.dom.rf are "
-            "not connected yet; replies are honest not-ready."
+            "MCP server: new-build checks on the client's EISZHS contract. "
+            "Method spec is closed; no invented exchange."
         ),
     )
     parser.add_argument(

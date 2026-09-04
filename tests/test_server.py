@@ -1,4 +1,4 @@
-"""Серверный слой: hosted wrappers, tool paths, client singleton."""
+"""Серверный слой: ключ ЕИСЖС, закрытая спецификация, hosted, честные отказы."""
 
 from __future__ import annotations
 
@@ -10,19 +10,60 @@ import mcp_newbuild.server as srv
 from mcp_newbuild.errors import BackendError, NewbuildError
 
 
-async def test_no_token_hint(monkeypatch) -> None:
-    monkeypatch.setattr(srv, "_settings", replace(srv._settings, token=None))
-    out = await srv._hosted_call("x", lambda: _fail())
-    assert out["error"] == "missing_token"
-    assert "MCP_NEWBUILD_API_KEY" in out["message_ru"]
+async def test_no_key_is_not_empty_card(monkeypatch) -> None:
+    monkeypatch.setattr(
+        srv,
+        "_settings",
+        replace(
+            srv._settings,
+            token=None,
+            eiszhs_client_id=None,
+            eiszhs_client_secret=None,
+        ),
+    )
+    out = await srv.check_developer("7707083893")
+    assert out["error"] == "source_not_configured"
+    assert out["ready"] is False
+    assert "name" not in out
+    assert "MCP_NEWBUILD_EISZHS_CLIENT_ID" in out["message_ru"]
     assert out["disclaimer"] == srv.DISCLAIMER
+
+
+async def test_eiszhs_creds_do_not_invent_exchange(monkeypatch) -> None:
+    monkeypatch.setattr(
+        srv,
+        "_settings",
+        replace(
+            srv._settings,
+            token=None,
+            eiszhs_client_id="id",
+            eiszhs_client_secret="secret",
+        ),
+    )
+    out = await srv.get_project_declaration("obj-1")
+    assert out["error"] == "spec_closed"
+    assert "не отправляем" in out["message_ru"]
+
+
+async def test_hosted_401_is_invalid_key(monkeypatch) -> None:
+    monkeypatch.setattr(
+        srv,
+        "_settings",
+        replace(srv._settings, token="bad", eiszhs_client_id=None, eiszhs_client_secret=None),
+    )
+
+    async def _boom() -> dict:
+        raise BackendError(401, "bad")
+
+    out = await srv._hosted_call("check_developer", _boom)
+    assert out["error"] == "invalid_credentials"
 
 
 async def test_disclaimer_injected(monkeypatch) -> None:
     monkeypatch.setattr(srv, "_settings", replace(srv._settings, token="k"))
 
     async def _ok() -> dict:
-        return {"results": []}
+        return {"ready": False}
 
     out = await srv._hosted_call("x", _ok)
     assert out["disclaimer"] == srv.DISCLAIMER
@@ -38,16 +79,6 @@ async def test_hosted_backend_error_500(monkeypatch) -> None:
     assert out["error"] == "backend_error"
 
 
-async def test_hosted_backend_error_401(monkeypatch) -> None:
-    monkeypatch.setattr(srv, "_settings", replace(srv._settings, token="k"))
-
-    async def _boom() -> dict:
-        raise BackendError(401, "bad")
-
-    out = await srv._hosted_call("check_developer", _boom)
-    assert out["error"] == "missing_token"
-
-
 async def test_hosted_newbuild_error(monkeypatch) -> None:
     monkeypatch.setattr(srv, "_settings", replace(srv._settings, token="k"))
 
@@ -60,7 +91,11 @@ async def test_hosted_newbuild_error(monkeypatch) -> None:
 
 @pytest.fixture
 def with_token_and_mock_call(monkeypatch):
-    monkeypatch.setattr(srv, "_settings", replace(srv._settings, token="k"))
+    monkeypatch.setattr(
+        srv,
+        "_settings",
+        replace(srv._settings, token="k", eiszhs_client_id=None, eiszhs_client_secret=None),
+    )
 
     async def _mock_call(fn):
         return {"ok": True}
@@ -116,7 +151,3 @@ def test_build_arg_parser_version() -> None:
     parser = srv._build_arg_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(["--version"])
-
-
-async def _fail() -> dict:
-    raise AssertionError("should not be called without token")

@@ -2,27 +2,39 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.atomno-mcp/mcp-newbuild",
   "title": "mcp-newbuild",
-  "description": "New-build MCP. EISZHS / nash.dom.rf sources are not connected.",
+  "description": "New-build MCP on the client's EISZHS contract. Spec is closed.",
   "repository": {
     "url": "https://github.com/atomno-mcp/mcp-newbuild",
     "source": "github"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "atomno-mcp-newbuild",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
+          "name": "MCP_NEWBUILD_EISZHS_CLIENT_ID",
+          "description": "client_id from the client's EISZHS API contract.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "MCP_NEWBUILD_EISZHS_CLIENT_SECRET",
+          "description": "client_secret from the client's EISZHS API contract.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
           "name": "MCP_NEWBUILD_API_KEY",
-          "description": "API key (Pro tier) for the hosted backend. Lookups return not-ready until EISZHS / nash.dom.rf are connected.",
-          "isRequired": true,
+          "description": "Optional key for Atomno hosted placement. Not an EISZHS key.",
+          "isRequired": false,
           "isSecret": true
         }
       ]

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "atomno-mcp-newbuild"
-version = "0.1.4"
-description = "MCP client for Russian new-build checks. EISZHS / nash.dom.rf are not connected yet; requests return an honest not-ready reply."
+version = "0.1.5"
+description = "MCP for Russian new-builds on the client's EISZHS contract. Method spec is closed; no invented API."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -65,6 +65,7 @@ atomno-mcp-newbuild = "mcp_newbuild.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_newbuild"]
+include = ["src/mcp_newbuild/py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -4,5 +4,5 @@
     "atomnos"
   ],
   "name": "mcp-newbuild",
-  "description": "New-build MCP. EISZHS / nash.dom.rf sources are not connected."
+  "description": "New-build MCP on the client's EISZHS contract. Spec is closed."
 }

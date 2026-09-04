@@ -2,30 +2,28 @@
 
 # atomno-mcp-newbuild
 
-Клиент для запросов по новостройкам и застройщикам. ЕИСЖС и наш.дом.рф ещё не подключены: ответ сообщает, что источник подключается, и не выдаёт пустую карточку как «объект не найден».
+Проверка новостроек и застройщиков на **ключе вашего договора** с ЕИСЖС. Своего доступа к ЕИСЖС у нас нет; на живом ключе клиента обмен не проверяли. Перечень методов закрыт договором — выдуманный запрос не отправляем.
 
-New-build MCP client. EISZHS / nash.dom.rf are not connected yet.
+New-build MCP on the client's EISZHS contract. Method spec is closed.
 
-> Это **не** инвестиционная рекомендация. Сейчас источник не подключён.
+> Это **не** инвестиционная рекомендация.
 
 ## Что умеет сейчас
 
-- Принимает запрос на карточку застройщика, декларацию, эскроу, разрешение, каталог и сводку риска.
-- Отвечает честно: `ready: false` и причина — источник ещё не подключён.
-- Не подменяет отказ пустым списком объектов.
+- Принимает `MCP_NEWBUILD_EISZHS_CLIENT_ID` и `MCP_NEWBUILD_EISZHS_CLIENT_SECRET` из оферты API ЕИСЖС (бизнес.дом.рф).
+- Без учётки — честный отказ: доступ не настроен. Не пустая карточка «объект не найден».
+- С учёткой — честный отказ `spec_closed`: спецификация методов выдаётся после договора, путей и полей в открытом доступе нет. Когда описание будет — методы включатся.
 
 ## Что не подключено
 
-- ЕИСЖС / наш.дом.рф (застройщики, декларации, эскроу, разрешения, каталог)
+- Живой вызов методов ЕИСЖС (описание закрыто)
+- Обход защиты портала наш.дом.рф без договора
 
 ## Быстрый старт
 
 ```bash
 pipx install atomno-mcp-newbuild
-# или: uvx atomno-mcp-newbuild
 ```
-
-Cursor / Claude Desktop (`mcp.json` / `claude_desktop_config.json`):
 
 ```json
 {
@@ -33,38 +31,44 @@ Cursor / Claude Desktop (`mcp.json` / `claude_desktop_config.json`):
     "newbuild": {
       "command": "uvx",
       "args": ["atomno-mcp-newbuild"],
-      "env": { "MCP_NEWBUILD_API_KEY": "<ваш-ключ-Pro>" }
+      "env": {
+        "MCP_NEWBUILD_EISZHS_CLIENT_ID": "<client_id из договора ЕИСЖС>",
+        "MCP_NEWBUILD_EISZHS_CLIENT_SECRET": "<client_secret из договора ЕИСЖС>"
+      }
     }
   }
 }
 ```
 
+Доступ: заявка и оферта на https://бизнес.дом.рф/api-еисжс (для юрлиц). Своего договора у нас нет. Наше размещение — отдельная услуга (`MCP_NEWBUILD_API_KEY`), не замена ключа ЕИСЖС.
+
 ## Переменные окружения
 
 | Переменная | Описание | Обязательна |
 |---|---|---|
-| `MCP_NEWBUILD_API_KEY` | Ключ Pro (заголовок X-API-Key). [Получить](https://atomno-mcp.ru/pricing#newbuild-pro) | да |
-| `MCP_NEWBUILD_API_BASE` | URL hosted-бэкенда (по умолчанию — прод) | нет |
-| `MCP_NEWBUILD_TIMEOUT` | Таймаут HTTP, сек (default 30) | нет |
-| `MCP_NEWBUILD_LOG_LEVEL` | Уровень логирования (DEBUG/INFO/WARNING/ERROR, default WARNING) | нет |
+| `MCP_NEWBUILD_EISZHS_CLIENT_ID` | Идентификатор учётки API ЕИСЖС | нет (нужен вместе с секретом) |
+| `MCP_NEWBUILD_EISZHS_CLIENT_SECRET` | Секрет учётки API ЕИСЖС | нет |
+| `MCP_NEWBUILD_EISZHS_BASE_URL` | Адрес промышленной среды (когда будет в спецификации) | нет |
+| `MCP_NEWBUILD_EISZHS_TOKEN_URL` | Адрес выдачи токена (когда будет в спецификации) | нет |
+| `MCP_NEWBUILD_API_KEY` | Ключ нашего размещения | нет |
+| `MCP_NEWBUILD_API_BASE` | URL нашего размещения | нет |
+| `MCP_NEWBUILD_TIMEOUT` | Таймаут HTTP, сек | нет |
+| `MCP_NEWBUILD_LOG_LEVEL` | Уровень логирования | нет |
 
 ## Тулы
 
 | Тул | Вход | Что отвечает сейчас |
 |---|---|---|
-| `check_developer` | ident (ИНН/ОГРН) | `ready: false` — ЕИСЖС не подключён |
-| `get_project_declaration` | object_id | `ready: false` — ЕИСЖС не подключён |
-| `check_escrow` | object_id | `ready: false` — ЕИСЖС не подключён |
-| `check_construction_permit` | object_id | `ready: false` — ЕИСЖС не подключён |
-| `list_new_buildings` | region?, developer_inn?, commissioning_year?, stage?, escrow?, limit? | `ready: false` — ЕИСЖС не подключён |
-| `get_developer_risk_summary` | inn | `ready: false` — ЕИСЖС не подключён |
-
-Каждый ответ содержит `source`, `checked_at` и `disclaimer`.
+| `check_developer` | ident (ИНН/ОГРН) | отказ: нет ключа / описание закрыто |
+| `get_project_declaration` | object_id | отказ: нет ключа / описание закрыто |
+| `check_escrow` | object_id | отказ: нет ключа / описание закрыто |
+| `check_construction_permit` | object_id | отказ: нет ключа / описание закрыто |
+| `list_new_buildings` | фильтры | отказ: нет ключа / описание закрыто |
+| `get_developer_risk_summary` | inn | отказ: нет ключа / описание закрыто |
 
 ## Дисклеймер
 
-ЕИСЖС / наш.дом.рф ещё не подключены. Это **не** инвестиционная рекомендация.
-Не аффилировано с ДОМ.РФ и ЕИСЖС.
+Это **не** инвестиционная рекомендация. Не аффилировано с ДОМ.РФ и ЕИСЖС. Своего доступа к ЕИСЖС у нас нет; на живом ключе клиента обмен не проверяли.
 
 ## Лицензия
 
